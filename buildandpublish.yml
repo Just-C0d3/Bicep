@@ -1,0 +1,41 @@
+ parameters:
+ - name: azureSubscription
+   type: string
+ - name: workingDirectory
+   type: string
+ - name: scope
+   type: string
+ - name: resourceGroupName
+   type: string
+ stages: 
+ - stage: 'notbuild'
+   displayName: 'notBuild'
+   jobs:
+   - job: Check_Cli
+     steps:
+     -  script: az version
+        displayName: 'Check CLI'
+   - job: 'notBuild'
+     displayName: 'notBuild'
+     dependsOn: Check_Cli
+     steps:
+     - task: AzureCLI@2
+       displayName: 'Deploy Template'
+       inputs:
+         azureSubscription: ${{ parameters.azureSubscription }}
+         scriptType: 'bash'
+         scriptLocation: 'inlineScript'
+         inlineScript: |
+            az bicep build --file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep'
+   - job: notpublish
+     displayName: publish_Artifacts
+     dependsOn: notbuild
+     steps: 
+     - task: CopyFiles@2
+       displayName: 'Copy_files'
+       inputs:
+         Contents: '**'
+         TargetFolder: '$(Build.ArtifactStagingDirectory)'
+     - publish: '$(Build.ArtifactStagingDirectory)'
+       displayName: 'Publish_files'
+       artifact: drop 
