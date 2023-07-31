@@ -1,0 +1,70 @@
+trigger:
+   batch: true 
+   branches:
+     include:
+       - main
+
+ pool: 
+   name: 'Default'
+
+   variables:
+   - group: Bicep-Budget
+   vmImageName: 'ubuntu-latest'
+   azureServiceConnection: 'experiment2'
+   Build.BuildNumber: 'rgbicep'
+   location: 'northeurope'
+   templateFile: '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep'
+   resourceGroupName: 'rgbicep'
+   projectName: 'rgbicep'
+   parameters: '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
+
+ stages:
+ - stage: 'buildandpublish'
+   jobs:
+   - job: 'publish'
+   displayName: 'Build and publish'
+ - template: 'buildandpublish.yml'
+   parameters: 
+    scope: 'resourceGroup'
+    workingDirectory: '$(Build.SourcesDirectory)/deploybiceprg/'
+    azureSubscription: 'experiment2'
+    resourceGroupName: json.parameters.rgName.value
+        
+ - stage: 'Validate'
+   jobs:
+   - job: 'validate' 
+   displayName: 'Validate'
+ - template: 'validate.yml'
+   parameters: 
+    contactEmails: $(contactEmails)
+    endDate: $(endDate)
+    environment: $(environment)
+    maximumBudget: $(maximumBudget)
+    startDate: $(startDate)
+    scope: 'resourceGroup'
+    workingDirectory: '$(Build.SourcesDirectory)/deploybiceprg/'
+    azureSubscription: 'experiment2'
+    resourceGroupName: json.parameters.rgName.value
+   
+ - stage: 'whatif'
+   jobs:
+   - job: 'whatif'     
+   displayName: 'What if'
+ - template: 'whatif.yml'
+   parameters: 
+    scope: 'resourceGroup'
+    workingDirectory: '$(Build.SourcesDirectory)/deploybiceprg/'
+    azureSubscription: 'experiment2'
+    resourceGroupName: json.parameters.rgName.value
+  
+  
+ - stage: 'DeployBicep'
+   jobs:
+   - job: 'Deploy' 
+   displayName: 'DeployBicep'
+ - template: 'deploy.yml'
+   parameters: 
+    scope: 'resourceGroup'
+    workingDirectory: '$(Build.SourcesDirectory)/deploybiceprg/'
+    azureSubscription: 'experiment2'
+    resourceGroupName: json.parameters.rgName.value
