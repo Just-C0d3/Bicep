@@ -1,0 +1,52 @@
+ parameters:
+ - name: azureSubscription
+   type: string
+ - name: workingDirectory
+   type: string
+ - name: scope
+   type: string
+ - name: resourceGroupName
+   type: string
+ stages: 
+ - stage: notwhatif
+   displayName: 'notwhatif'
+   jobs:
+   - job: 'WhatIf'
+     displayName: 'Preview Changes'
+     steps: 
+       - ${{ if eq(parameters['scope'], 'subscriptionresourceGroup') }}:
+         - download: current
+           artifact: drop
+         - task: AzureCLI@2
+           name: RunWhatIf
+           displayName: 'Run What-If'
+           inputs:
+            azureSubscription: 'experiment2'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript:
+               az deployment group what-if    --resource-group 'rgbicep' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json' 
+       - ${{ if eq(parameters['scope'], 'resourceGroup') }}: 
+         - download: current
+           artifact: drop
+         - task: AzureCLI@2
+           name: RunWhatIf
+           displayName: 'Run What-If'
+           inputs:
+            azureSubscription: 'experiment2'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript:  
+               az deployment sub what-if --location 'westus2' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep'  --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
+       - ${{ if eq(parameters['scope'], 'management-group') }}:
+         - download: current
+           artifact: drop
+         - task: AzureCLI@2
+           name: RunWhatIf
+           displayName: 'Run What-If'
+           inputs:
+            azureSubscription: 'experiment2'
+            scriptType: bash
+            scriptLocation: inlineScript
+            inlineScript:
+               az deployment managementGroup what-if --location 'westus2' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
