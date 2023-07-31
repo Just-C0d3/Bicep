@@ -1,0 +1,67 @@
+parameters:
+- name: azureSubscription
+  type: string
+- name: workingDirectory
+  type: string
+- name: scope
+  type: string
+- name: resourceGroupName
+  type: string
+  
+   
+ 
+stages:
+- stage: 'Building'
+  displayName: 'Build'
+  jobs:
+  - job: 'Deploy'
+    steps:
+    - task: AzureCLI@2
+      displayName: 'Deploy Template'
+      inputs:
+        azureSubscription: ${{ parameters.azureSubscription }}
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          if [ "${{ parameters.scope }}" == "subscription" ]; then
+            echo "Deploying Bicep files for subscription scope"
+          elif [ "${{ parameters.scope }}" == "managementGroup" ]; then
+            echo "Deploying Bicep files for management group scope"
+          elif [ "${{ parameters.scope }}" == "resourceGroup" ]; then
+            echo "Deploying Bicep files for resource group scope"
+          else
+            echo "Invalid scope value"
+            exit 1
+          fi
+        addSpnToEnvironment: true
+    - ${{ if eq(parameters['scope'], 'subscription') }}:
+        - task: AzureCLI@2
+          displayName: 'Build Bicep files - Subscription'
+          inputs:
+            azureSubscription: ${{ parameters.azureSubscription }}
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: 
+               az deployment group create --resource-group 'rgbicep' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters $(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
+            addSpnToEnvironment: true
+    - ${{ if eq(parameters['scope'], 'resourceGroup') }}:
+        - task: AzureCLI@2
+          displayName: 'Build Bicep files - Management Group'
+          inputs:
+            azureSubscription: ${{ parameters.azureSubscription }}
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: 
+               az deployment sub create --location 'westus2' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
+            addSpnToEnvironment: true
+    - ${{ if eq(parameters['scope'], 'managementGroup') }}:
+        - task: AzureCLI@2
+          displayName: 'Build Bicep files - Resource Group'
+          inputs:
+            azureSubscription: ${{ parameters.azureSubscription }}
+            scriptType: 'bash'
+            scriptLocation: 'inlineScript'
+            inlineScript: 
+               az deployment mg create --location 'westus2' --management-group-id testmg --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.patameters.json'
+            addSpnToEnvironment: true
+              
