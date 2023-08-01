@@ -62,7 +62,7 @@ stages:
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
             inlineScript: 
-               az deployment group validate --contactEmails '${{ parameters.contactEmails }}' --endDate '${{ parameters.endDate }}' --environment '${{ parameters.environment }}' --maximumBudget '${{ parameters.maximumBudget }}' --startDate '${{ parameters.startDate }}' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --resource-group 'rgbicep'
+               deployment group validate  --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
             addSpnToEnvironment: true
     - ${{ if eq(parameters['scope'], 'resourceGroup') }}:
         - task: AzureCLI@2
@@ -76,9 +76,8 @@ stages:
             startDate: ${{ parameters.startDate }}
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
-            inlineScript: 
-               az deployment sub validate --location 'westus2'  --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep'
-               echo ${{ parameters.contactEmails }}
+            inlineScript:  
+               az deployment sub validate --location 'westus2'  --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
             addSpnToEnvironment: true
     - ${{ if eq(parameters['scope'], 'managementGroup') }}:
         - task: AzureCLI@2
@@ -93,5 +92,5 @@ stages:
             scriptType: 'bash'
             scriptLocation: 'inlineScript'
             inlineScript: 
-               az deployment mg validate --location 'westus2' --management-group-id 'testmg' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep'
+               az deployment mg validate --location 'westus2' --management-group-id 'testmg' --template-file '$(Build.SourcesDirectory)/deploybiceprg/budgets.bicep' --parameters '$(Build.SourcesDirectory)/deploybiceprg/budgets.parameters.json'
             addSpnToEnvironment: true
